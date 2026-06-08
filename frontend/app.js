@@ -42,6 +42,7 @@ const el = {
   householdId: document.getElementById("householdId"),
   listOutput: document.getElementById("listOutput"),
   listHint: document.getElementById("listHint"),
+  listSubtitle: document.getElementById("listSubtitle"),
   resourceForm: document.getElementById("resourceForm"),
   bootstrapBtn: document.getElementById("bootstrapBtn"),
   refreshBtn: document.getElementById("refreshBtn"),
@@ -278,6 +279,23 @@ function formatCurrency(cents) {
   }).format((Number(cents) || 0) / 100);
 }
 
+function formatDate(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat("pt-BR").format(date);
+}
+
+function formatDateTime(value) {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(date);
+}
+
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -324,6 +342,191 @@ function getResourceOptions(source) {
       label: labelParts.length ? `${labelParts[0]}${labelParts[1] ? ` (${labelParts[1]})` : ""}` : fallback,
     };
   });
+}
+
+function lookupLabel(source, value) {
+  if (value === null || value === undefined || value === "") return "—";
+  const data = {
+    printers: state.printers,
+    materials: state.materials,
+    materialLots: state.materialLots,
+    products: state.products,
+    orders: state.orders,
+    salesChannels: state.salesChannels,
+    packagingItems: state.packagingItems,
+    users: state.users,
+    printJobs: state.printJobs,
+  }[source] || [];
+  const item = data.find((entry) => String(entry.id) === String(value));
+  if (!item) return `#${value}`;
+  return item.name || item.sku || item.status || `#${item.id}`;
+}
+
+function listColumns(resource) {
+  const columns = {
+    households: [
+      { key: "id", label: "ID" },
+      { key: "name", label: "Nome" },
+      { key: "created_at", label: "Criado em", format: formatDateTime },
+    ],
+    users: [
+      { key: "id", label: "ID" },
+      { key: "name", label: "Nome" },
+      { key: "email", label: "E-mail" },
+      { key: "role", label: "Perfil" },
+      { key: "is_active", label: "Ativo", format: (value) => (value ? "Sim" : "Não") },
+    ],
+    printers: [
+      { key: "id", label: "ID" },
+      { key: "name", label: "Nome" },
+      { key: "brand", label: "Marca" },
+      { key: "model", label: "Modelo" },
+      { key: "purchase_price_cents", label: "Compra", format: formatCurrency },
+      { key: "average_power_watts", label: "Potência", suffix: "W" },
+      { key: "is_active", label: "Ativa", format: (value) => (value ? "Sim" : "Não") },
+    ],
+    materials: [
+      { key: "id", label: "ID" },
+      { key: "name", label: "Nome" },
+      { key: "material_type", label: "Tipo" },
+      { key: "color", label: "Cor" },
+      { key: "spool_weight_g", label: "Carretel", suffix: "g" },
+      { key: "is_active", label: "Ativo", format: (value) => (value ? "Sim" : "Não") },
+    ],
+    material_lots: [
+      { key: "id", label: "ID" },
+      { key: "material_id", label: "Material", format: (value) => lookupLabel("materials", value) },
+      { key: "supplier_name", label: "Fornecedor" },
+      { key: "cost_cents", label: "Custo", format: formatCurrency },
+      { key: "remaining_weight_g", label: "Saldo", suffix: "g" },
+      { key: "purchased_at", label: "Comprado", format: formatDate },
+    ],
+    energy_rates: [
+      { key: "id", label: "ID" },
+      { key: "name", label: "Nome" },
+      { key: "price_per_kwh_cents", label: "kWh", format: formatCurrency, suffix: "/kWh" },
+      { key: "effective_from", label: "Desde", format: formatDate },
+      { key: "is_active", label: "Ativa", format: (value) => (value ? "Sim" : "Não") },
+    ],
+    cost_settings: [
+      { key: "id", label: "ID" },
+      { key: "labor_rate_cents_per_hour", label: "Mão de obra", format: formatCurrency, suffix: "/h" },
+      { key: "monthly_overhead_cents", label: "Fixo", format: formatCurrency },
+      { key: "default_margin_percent", label: "Margem", suffix: "%" },
+      { key: "default_freight_subsidy_cents", label: "Frete", format: formatCurrency },
+    ],
+    packaging_items: [
+      { key: "id", label: "ID" },
+      { key: "name", label: "Nome" },
+      { key: "unit", label: "Unidade" },
+      { key: "cost_cents", label: "Custo", format: formatCurrency },
+      { key: "is_active", label: "Ativo", format: (value) => (value ? "Sim" : "Não") },
+    ],
+    sales_channels: [
+      { key: "id", label: "ID" },
+      { key: "name", label: "Nome" },
+      { key: "fee_percent", label: "Taxa", suffix: "%" },
+      { key: "fixed_fee_cents", label: "Fixa", format: formatCurrency },
+      { key: "is_active", label: "Ativo", format: (value) => (value ? "Sim" : "Não") },
+    ],
+    products: [
+      { key: "id", label: "ID" },
+      { key: "sku", label: "SKU" },
+      { key: "name", label: "Nome" },
+      { key: "target_margin_percent", label: "Margem", suffix: "%" },
+      { key: "is_active", label: "Ativo", format: (value) => (value ? "Sim" : "Não") },
+    ],
+    print_jobs: [
+      { key: "id", label: "ID" },
+      { key: "status", label: "Status" },
+      { key: "printer_id", label: "Impressora", format: (value) => lookupLabel("printers", value) },
+      { key: "quantity", label: "Qtd" },
+      { key: "estimated_print_minutes", label: "Tempo", suffix: "min" },
+      { key: "failed", label: "Falhou", format: (value) => (value ? "Sim" : "Não") },
+    ],
+    print_job_packaging_items: [
+      { key: "id", label: "ID" },
+      { key: "print_job_id", label: "Job", format: (value) => lookupLabel("printJobs", value) },
+      { key: "packaging_item_id", label: "Embalagem", format: (value) => lookupLabel("packagingItems", value) },
+      { key: "quantity", label: "Qtd" },
+      { key: "unit_cost_cents_snapshot", label: "Custo", format: formatCurrency },
+    ],
+    orders: [
+      { key: "id", label: "ID" },
+      { key: "status", label: "Status" },
+      { key: "customer_name", label: "Cliente" },
+      { key: "shipping_cents", label: "Frete", format: formatCurrency },
+      { key: "discount_cents", label: "Desconto", format: formatCurrency },
+      { key: "order_date", label: "Data", format: formatDate },
+    ],
+    order_items: [
+      { key: "id", label: "ID" },
+      { key: "order_id", label: "Pedido", format: (value) => lookupLabel("orders", value) },
+      { key: "product_id", label: "Produto", format: (value) => lookupLabel("products", value) },
+      { key: "quantity", label: "Qtd" },
+      { key: "selling_price_cents", label: "Venda", format: formatCurrency },
+    ],
+    expenses: [
+      { key: "id", label: "ID" },
+      { key: "category", label: "Categoria" },
+      { key: "description", label: "Descrição" },
+      { key: "amount_cents", label: "Valor", format: formatCurrency },
+      { key: "occurred_on", label: "Data", format: formatDate },
+    ],
+  };
+
+  return columns[resource] || [
+    { key: "id", label: "ID" },
+    { key: "created_at", label: "Criado", format: formatDateTime },
+  ];
+}
+
+function formatCell(column, row) {
+  const value = row[column.key];
+  if (column.format) return column.format(value, row);
+  if (typeof value === "boolean") return value ? "Sim" : "Não";
+  if (value === null || value === undefined || value === "") return "—";
+  if (column.suffix) return `${value}${column.suffix}`;
+  return String(value);
+}
+
+function renderList(resource, items) {
+  const columns = listColumns(resource);
+  if (!items.length) {
+    return `<div class="empty-state">Nenhum registro ainda para <strong>${resource}</strong>.</div>`;
+  }
+
+  if (items.length === 1 && columns.length <= 2) {
+    const item = items[0];
+    return `
+      <article class="record-card">
+        ${columns.map((column) => `<div><span>${column.label}</span><strong>${formatCell(column, item)}</strong></div>`).join("")}
+      </article>
+    `;
+  }
+
+  return `
+    <div class="table-wrap">
+      <table class="record-table">
+        <thead>
+          <tr>
+            ${columns.map((column) => `<th>${column.label}</th>`).join("")}
+          </tr>
+        </thead>
+        <tbody>
+          ${items
+            .map(
+              (row) => `
+                <tr>
+                  ${columns.map((column) => `<td>${formatCell(column, row)}</td>`).join("")}
+                </tr>
+              `,
+            )
+            .join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
 }
 
 function renderResourceTabs(resources) {
@@ -695,12 +898,13 @@ async function loadList() {
   const resource = el.resourceSelect.value || state.currentResource;
   state.currentResource = resource;
   el.listHint.textContent = resource;
+  el.listSubtitle.textContent = getResourceDefinition(resource).hint;
   const householdId = Number(el.householdId.value || 1);
   try {
     const data = await api(`/api/${resource}?household_id=${householdId}&limit=10`);
-    el.listOutput.textContent = prettyJson(data.items || []);
+    el.listOutput.innerHTML = renderList(resource, data.items || []);
   } catch (error) {
-    el.listOutput.textContent = `Erro ao carregar ${resource}\n\n${error.message}`;
+    el.listOutput.innerHTML = `<div class="empty-state">Erro ao carregar <strong>${resource}</strong><br />${error.message}</div>`;
   }
 }
 
