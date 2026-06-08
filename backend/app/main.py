@@ -61,6 +61,16 @@ def api_health():
     return health()
 
 
+@api.get("/auth-config")
+def auth_config():
+    return {"enabled": False}
+
+
+@api.get("/me")
+def me():
+    return {"authenticated": False, "user": None}
+
+
 @api.get("/resources")
 def resources():
     return {"resources": list_resources()}

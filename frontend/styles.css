@@ -155,6 +155,10 @@ textarea {
   border: 1px solid rgba(255, 122, 24, 0.2);
 }
 
+.hidden {
+  display: none !important;
+}
+
 .content {
   display: grid;
   gap: 20px;
