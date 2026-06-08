@@ -26,6 +26,10 @@ Infraestrutura e scripts para a base do servidor do projeto de custos da impress
 - `docs/data-model.md`
   - leitura humana do modelo de dados e da lógica de custo
 
+- `backend/`
+  - API FastAPI com CRUD genérico para os principais recursos
+  - já preparada para conversar com o Postgres do servidor via `DATABASE_URL`
+
 ## Como a estratégia de backup funciona
 
 - `WAL` arquivado em `/opt/backups/postgres/wal`

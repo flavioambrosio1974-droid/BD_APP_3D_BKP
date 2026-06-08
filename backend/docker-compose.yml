@@ -1,0 +1,15 @@
+services:
+  api:
+    build: .
+    container_name: custo3d-api
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "8080:8080"
+    networks:
+      - infra
+networks:
+  infra:
+    external: true
+
