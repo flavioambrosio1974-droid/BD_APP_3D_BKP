@@ -38,6 +38,11 @@ def health():
     return {"ok": True, "db": row["ok"]}
 
 
+@api.get("/health")
+def api_health():
+    return health()
+
+
 @api.get("/resources")
 def resources():
     return {"resources": list_resources()}
