@@ -30,6 +30,10 @@ Infraestrutura e scripts para a base do servidor do projeto de custos da impress
   - API FastAPI com CRUD genérico para os principais recursos
   - já preparada para conversar com o Postgres do servidor via `DATABASE_URL`
 
+- `frontend/`
+  - UI estática servida por Caddy
+  - usa o mesmo domínio e encaminha `/api/*` para o backend
+
 ## Como a estratégia de backup funciona
 
 - `WAL` arquivado em `/opt/backups/postgres/wal`
@@ -59,3 +63,4 @@ Infraestrutura e scripts para a base do servidor do projeto de custos da impress
 4. automatizar cópia dos backups para outro destino
 5. validar restore base em rotina agendada ou manual
 6. criar o backend CRUD em cima do schema
+7. colocar a UI no ar e testar o fluxo de cadastro

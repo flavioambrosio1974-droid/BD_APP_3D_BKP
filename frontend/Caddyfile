@@ -1,0 +1,11 @@
+:8080 {
+  encode zstd gzip
+  handle /api/* {
+    reverse_proxy custo3d-api:8080
+  }
+
+  handle {
+    root * /srv
+    file_server
+  }
+}

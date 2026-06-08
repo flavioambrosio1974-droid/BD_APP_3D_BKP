@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, ConfigDict
 
@@ -25,6 +25,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+api = APIRouter(prefix="/api")
+
 
 class Payload(BaseModel):
     model_config = ConfigDict(extra="allow")
@@ -36,17 +38,17 @@ def health():
     return {"ok": True, "db": row["ok"]}
 
 
-@app.get("/api/resources")
+@api.get("/resources")
 def resources():
     return {"resources": list_resources()}
 
 
-@app.get("/api/bootstrap")
+@api.get("/bootstrap")
 def bootstrap():
     return bootstrap_household()
 
 
-@app.get("/api/{resource}")
+@api.get("/{resource}")
 def list_items(
     resource: str,
     household_id: int | None = None,
@@ -56,22 +58,24 @@ def list_items(
     return {"items": list_records(resource, household_id=household_id, limit=limit, offset=offset)}
 
 
-@app.get("/api/{resource}/{item_id}")
+@api.get("/{resource}/{item_id}")
 def read_item(resource: str, item_id: int):
     return get_record(resource, item_id)
 
 
-@app.post("/api/{resource}")
+@api.post("/{resource}")
 def create_item(resource: str, payload: Payload):
     return create_record(resource, payload.model_dump())
 
 
-@app.patch("/api/{resource}/{item_id}")
+@api.patch("/{resource}/{item_id}")
 def update_item(resource: str, item_id: int, payload: Payload):
     return update_record(resource, item_id, payload.model_dump(exclude_unset=True))
 
 
-@app.delete("/api/{resource}/{item_id}")
+@api.delete("/{resource}/{item_id}")
 def delete_item(resource: str, item_id: int):
     return delete_record(resource, item_id)
 
+
+app.include_router(api)

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Custo3D</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="backdrop"></div>
+    <main class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="mark">3D</div>
+          <div>
+            <p class="eyebrow">Custo3D</p>
+            <h1>Controle real de produção</h1>
+          </div>
+        </div>
+
+        <nav class="nav">
+          <button class="nav-item active" data-panel="dashboard">Painel</button>
+          <button class="nav-item" data-panel="materials">Materiais</button>
+          <button class="nav-item" data-panel="printers">Impressoras</button>
+          <button class="nav-item" data-panel="jobs">Jobs</button>
+          <button class="nav-item" data-panel="orders">Pedidos</button>
+        </nav>
+
+        <section class="status-card">
+          <p class="eyebrow">Status</p>
+          <h2 id="healthState">Conectando...</h2>
+          <p id="healthDetail">Aguardando backend.</p>
+        </section>
+      </aside>
+
+      <section class="content">
+        <header class="hero">
+          <div>
+            <p class="eyebrow">Operação diária</p>
+            <h2>Preço com custo, frete, energia e depreciação no mesmo lugar.</h2>
+            <p class="subcopy">
+              Uma base simples para a família registrar peças, materiais, máquinas e pedidos sem perder margem.
+            </p>
+          </div>
+          <div class="hero-metrics" id="heroMetrics"></div>
+        </header>
+
+        <section class="panel-grid" id="dashboardPanel">
+          <article class="panel">
+            <div class="panel-title">
+              <h3>Resumo rápido</h3>
+              <span>Hoje</span>
+            </div>
+            <div class="big-number" id="summaryCount">0</div>
+            <p class="muted">recursos cadastrados no backend</p>
+          </article>
+
+          <article class="panel">
+            <div class="panel-title">
+              <h3>Acesso rápido</h3>
+              <span>API</span>
+            </div>
+            <div class="chip-row" id="resourceChips"></div>
+          </article>
+
+          <article class="panel wide">
+            <div class="panel-title">
+              <h3>Primeiro fluxo</h3>
+              <span>bootstrap</span>
+            </div>
+            <ol class="steps">
+              <li>Crie a casa/equipe com o bootstrap.</li>
+              <li>Cadastre impressoras, materiais e custo de energia.</li>
+              <li>Registre jobs, pedidos e despesas.</li>
+              <li>Veja o custo real antes de vender.</li>
+            </ol>
+          </article>
+        </section>
+
+        <section class="panel" id="formsPanel">
+          <div class="panel-title">
+            <h3>Cadastro rápido</h3>
+            <span>CRUD genérico</span>
+          </div>
+
+          <form class="form-grid" id="resourceForm">
+            <label>
+              Recurso
+              <select id="resourceSelect"></select>
+            </label>
+            <label>
+              Household ID
+              <input id="householdId" type="number" value="1" min="1" />
+            </label>
+            <label class="full">
+              Payload JSON
+              <textarea id="payloadInput" rows="8">{}</textarea>
+            </label>
+            <div class="actions full">
+              <button type="submit">Salvar</button>
+              <button type="button" class="secondary" id="bootstrapBtn">Bootstrap</button>
+              <button type="button" class="secondary" id="refreshBtn">Atualizar listagem</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel" id="listPanel">
+          <div class="panel-title">
+            <h3>Últimos registros</h3>
+            <span id="listHint">resource</span>
+          </div>
+          <pre id="listOutput" class="code-block">Carregando...</pre>
+        </section>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

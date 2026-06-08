@@ -1,0 +1,18 @@
+services:
+  web:
+    image: caddy:2
+    container_name: custo3d-web
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:8080"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./index.html:/srv/index.html:ro
+      - ./styles.css:/srv/styles.css:ro
+      - ./app.js:/srv/app.js:ro
+    networks:
+      - infra
+networks:
+  infra:
+    external: true
+
