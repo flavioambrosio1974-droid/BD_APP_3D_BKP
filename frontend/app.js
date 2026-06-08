@@ -1,6 +1,10 @@
 const state = {
   resources: [],
   currentResource: "printers",
+  printers: [],
+  materials: [],
+  materialLots: [],
+  lastEstimate: null,
 };
 
 const el = {
@@ -17,10 +21,31 @@ const el = {
   resourceForm: document.getElementById("resourceForm"),
   bootstrapBtn: document.getElementById("bootstrapBtn"),
   refreshBtn: document.getElementById("refreshBtn"),
+  simulatorForm: document.getElementById("simulatorForm"),
+  simPrinterSelect: document.getElementById("simPrinterSelect"),
+  simLotSelect: document.getElementById("simLotSelect"),
+  simPrintMinutes: document.getElementById("simPrintMinutes"),
+  simMaterialG: document.getElementById("simMaterialG"),
+  simSupportG: document.getElementById("simSupportG"),
+  simPurgeG: document.getElementById("simPurgeG"),
+  simPostMinutes: document.getElementById("simPostMinutes"),
+  simQuantity: document.getElementById("simQuantity"),
+  simMarginPercent: document.getElementById("simMarginPercent"),
+  simFreightSubsidy: document.getElementById("simFreightSubsidy"),
+  simRefreshBtn: document.getElementById("simRefreshBtn"),
+  estimateCards: document.getElementById("estimateCards"),
+  estimateOutput: document.getElementById("estimateOutput"),
 };
 
 function prettyJson(value) {
   return JSON.stringify(value, null, 2);
+}
+
+function formatCurrency(cents) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format((Number(cents) || 0) / 100);
 }
 
 async function api(path, options = {}) {
@@ -67,6 +92,55 @@ function renderMetrics(resources) {
   el.summaryCount.textContent = resources.length;
 }
 
+function renderSimulatorOptions() {
+  const materialById = new Map(state.materials.map((material) => [material.id, material]));
+
+  el.simPrinterSelect.innerHTML = state.printers
+    .map((printer) => `<option value="${printer.id}">${printer.name || `Impressora #${printer.id}`}</option>`)
+    .join("");
+
+  el.simLotSelect.innerHTML = state.materialLots
+    .map((lot) => {
+      const material = materialById.get(lot.material_id);
+      const label = material?.name || `Material #${lot.material_id}`;
+      const remaining = lot.remaining_weight_g ?? lot.gross_weight_g ?? 0;
+      return `<option value="${lot.id}">${label} - lote #${lot.id} (${remaining}g)</option>`;
+    })
+    .join("");
+
+  if (!state.printers.length) {
+    el.simPrinterSelect.innerHTML = `<option value="">Nenhuma impressora</option>`;
+  }
+  if (!state.materialLots.length) {
+    el.simLotSelect.innerHTML = `<option value="">Nenhum lote</option>`;
+  }
+}
+
+function renderEstimate(result) {
+  const cards = [
+    { label: "Custo direto", value: formatCurrency(result.direct_cost_cents), tone: "good" },
+    { label: "Preço sugerido", value: result.suggested_sale_price_cents == null ? "sem margem" : formatCurrency(result.suggested_sale_price_cents), tone: "good" },
+    { label: "Material", value: formatCurrency(result.breakdown_cents?.material), tone: "" },
+    { label: "Energia + depreciação", value: formatCurrency((result.breakdown_cents?.energy || 0) + (result.breakdown_cents?.depreciation || 0)), tone: "" },
+  ];
+
+  el.estimateCards.innerHTML = cards
+    .map(
+      (card) => `
+        <article class="estimate-card ${card.tone}">
+          <div class="label">${card.label}</div>
+          <div class="value">${card.value}</div>
+        </article>
+      `,
+    )
+    .join("");
+
+  const warnings = result.warnings && result.warnings.length
+    ? `<ul class="warning-list">${result.warnings.map((warning) => `<li>${warning}</li>`).join("")}</ul>`
+    : "";
+  el.estimateOutput.innerHTML = `${warnings}<div class="estimate-json">${prettyJson(result)}</div>`;
+}
+
 async function loadResources() {
   const payload = await api("/api/resources");
   state.resources = payload.resources || [];
@@ -76,6 +150,27 @@ async function loadResources() {
   el.listHint.textContent = state.currentResource;
   el.resourceSelect.value = state.currentResource;
   await loadList();
+}
+
+async function loadSimulatorLookups() {
+  const householdId = Number(el.householdId.value || 1);
+  const [printersPayload, materialsPayload, lotsPayload] = await Promise.all([
+    api(`/api/printers?household_id=${householdId}&limit=50`),
+    api(`/api/materials?household_id=${householdId}&limit=50`),
+    api(`/api/material_lots?household_id=${householdId}&limit=50`),
+  ]);
+
+  state.printers = printersPayload.items || [];
+  state.materials = materialsPayload.items || [];
+  state.materialLots = lotsPayload.items || [];
+  renderSimulatorOptions();
+
+  if (state.printers.length) {
+    el.simPrinterSelect.value = state.printers[0].id;
+  }
+  if (state.materialLots.length) {
+    el.simLotSelect.value = state.materialLots[0].id;
+  }
 }
 
 async function loadHealth() {
@@ -202,6 +297,31 @@ function bindActions() {
 
   el.refreshBtn.addEventListener("click", loadList);
 
+  el.simRefreshBtn.addEventListener("click", loadSimulatorLookups);
+
+  el.simulatorForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const payload = {
+      household_id: Number(el.householdId.value || 1),
+      printer_id: Number(el.simPrinterSelect.value),
+      primary_material_lot_id: el.simLotSelect.value ? Number(el.simLotSelect.value) : null,
+      estimated_print_minutes: Number(el.simPrintMinutes.value || 0),
+      material_g: Number(el.simMaterialG.value || 0),
+      support_material_g: Number(el.simSupportG.value || 0),
+      purge_waste_g: Number(el.simPurgeG.value || 0),
+      post_process_minutes: Number(el.simPostMinutes.value || 0),
+      quantity: Number(el.simQuantity.value || 1),
+      margin_percent: el.simMarginPercent.value ? Number(el.simMarginPercent.value) : null,
+      freight_subsidy_cents: el.simFreightSubsidy.value ? Number(el.simFreightSubsidy.value) : null,
+    };
+    const result = await api("/api/estimate-print-job", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    state.lastEstimate = result;
+    renderEstimate(result);
+  });
+
   el.resourceForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     const resource = el.resourceSelect.value;
@@ -229,6 +349,7 @@ async function main() {
   bindActions();
   await loadHealth();
   await loadResources();
+  await loadSimulatorLookups();
   setDefaultPayload(el.resourceSelect.value);
 }
 
@@ -236,4 +357,3 @@ main().catch((error) => {
   console.error(error);
   el.listOutput.textContent = error.message;
 });
-

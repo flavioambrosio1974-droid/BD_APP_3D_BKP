@@ -83,6 +83,63 @@
           </article>
         </section>
 
+        <section class="panel wide" id="simulatorPanel">
+          <div class="panel-title">
+            <h3>Simulador de custo</h3>
+            <span>precificação</span>
+          </div>
+
+          <form class="form-grid" id="simulatorForm">
+            <label>
+              Impressora
+              <select id="simPrinterSelect"></select>
+            </label>
+            <label>
+              Lote de material
+              <select id="simLotSelect"></select>
+            </label>
+            <label>
+              Minutos de impressão
+              <input id="simPrintMinutes" type="number" min="0" step="0.1" value="180" />
+            </label>
+            <label>
+              Gramas da peça
+              <input id="simMaterialG" type="number" min="0" step="0.1" value="120" />
+            </label>
+            <label>
+              Suportes
+              <input id="simSupportG" type="number" min="0" step="0.1" value="12" />
+            </label>
+            <label>
+              Purga e perdas
+              <input id="simPurgeG" type="number" min="0" step="0.1" value="8" />
+            </label>
+            <label>
+              Pós-processo
+              <input id="simPostMinutes" type="number" min="0" step="0.1" value="20" />
+            </label>
+            <label>
+              Quantidade
+              <input id="simQuantity" type="number" min="1" step="1" value="1" />
+            </label>
+            <label>
+              Margem %
+              <input id="simMarginPercent" type="number" min="0" step="0.1" placeholder="usar padrão" />
+            </label>
+            <label>
+              Subsídio de frete
+              <input id="simFreightSubsidy" type="number" min="0" step="1" placeholder="usar padrão" />
+            </label>
+            <div class="actions full">
+              <button type="submit">Calcular custo</button>
+              <button type="button" class="secondary" id="simRefreshBtn">Atualizar opções</button>
+            </div>
+          </form>
+
+          <div class="estimate-grid" id="estimateCards"></div>
+          <div id="estimateOutput" class="code-block">Preencha os campos acima e calcule.</div>
+        </section>
+
         <section class="panel" id="formsPanel">
           <div class="panel-title">
             <h3>Cadastro rápido</h3>
