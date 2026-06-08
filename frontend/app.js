@@ -101,6 +101,12 @@ function renderMetrics(resources) {
   el.summaryCount.textContent = resources.length;
 }
 
+function setActiveNav(panelName) {
+  document.querySelectorAll(".nav-item").forEach((item) => {
+    item.classList.toggle("active", item.dataset.panel === panelName);
+  });
+}
+
 function setupStepDetail(resource) {
   const details = {
     bootstrap: "Cria a casa/equipe e a configuração de custo base.",
@@ -133,6 +139,15 @@ function openSetupResource(step) {
   state.currentResource = step.resource;
   setDefaultPayload(step.resource);
   loadList();
+  document.getElementById("formsPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function focusResource(resource, panelName = "materials") {
+  el.resourceSelect.value = resource;
+  state.currentResource = resource;
+  setDefaultPayload(resource);
+  loadList();
+  setActiveNav(panelName);
   document.getElementById("formsPanel").scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -332,26 +347,17 @@ function setDefaultPayload(resource) {
 function bindNav() {
   document.querySelectorAll(".nav-item").forEach((button) => {
     button.addEventListener("click", () => {
-      document.querySelectorAll(".nav-item").forEach((item) => item.classList.remove("active"));
-      button.classList.add("active");
       if (button.dataset.panel === "dashboard") {
+        setActiveNav("dashboard");
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else if (button.dataset.panel === "materials") {
-        el.resourceSelect.value = "materials";
-        setDefaultPayload("materials");
-        loadList();
+        focusResource("materials", "materials");
       } else if (button.dataset.panel === "printers") {
-        el.resourceSelect.value = "printers";
-        setDefaultPayload("printers");
-        loadList();
+        focusResource("printers", "printers");
       } else if (button.dataset.panel === "jobs") {
-        el.resourceSelect.value = "print_jobs";
-        setDefaultPayload("print_jobs");
-        loadList();
+        focusResource("print_jobs", "jobs");
       } else if (button.dataset.panel === "orders") {
-        el.resourceSelect.value = "orders";
-        setDefaultPayload("orders");
-        loadList();
+        focusResource("orders", "orders");
       }
     });
   });
