@@ -6,6 +6,7 @@ const state = {
   materialLots: [],
   lastEstimate: null,
   setupStatus: null,
+  activeView: "dashboard",
 };
 
 const el = {
@@ -14,6 +15,11 @@ const el = {
   summaryCount: document.getElementById("summaryCount"),
   heroMetrics: document.getElementById("heroMetrics"),
   resourceChips: document.getElementById("resourceChips"),
+  dashboardPanel: document.getElementById("dashboardPanel"),
+  simulatorPanel: document.getElementById("simulatorPanel"),
+  formsPanel: document.getElementById("formsPanel"),
+  listPanel: document.getElementById("listPanel"),
+  formsTitle: document.getElementById("formsTitle"),
   setupProgressLabel: document.getElementById("setupProgressLabel"),
   setupSummary: document.getElementById("setupSummary"),
   setupProgressBar: document.getElementById("setupProgressBar"),
@@ -107,6 +113,15 @@ function setActiveNav(panelName) {
   });
 }
 
+function setView(viewName) {
+  state.activeView = viewName;
+  const isDashboard = viewName === "dashboard";
+  el.dashboardPanel.classList.toggle("hidden", !isDashboard);
+  el.simulatorPanel.classList.toggle("hidden", !isDashboard);
+  el.formsPanel.classList.toggle("hidden", isDashboard);
+  el.listPanel.classList.toggle("hidden", isDashboard);
+}
+
 function setupStepDetail(resource) {
   const details = {
     bootstrap: "Cria a casa/equipe e a configuração de custo base.",
@@ -128,18 +143,10 @@ function openSetupResource(step) {
     return;
   }
   if (step.resource === "print_jobs") {
-    el.resourceSelect.value = "print_jobs";
-    state.currentResource = "print_jobs";
-    setDefaultPayload("print_jobs");
-    loadList();
-    document.getElementById("formsPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+    focusResource("print_jobs", "jobs");
     return;
   }
-  el.resourceSelect.value = step.resource;
-  state.currentResource = step.resource;
-  setDefaultPayload(step.resource);
-  loadList();
-  document.getElementById("formsPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+  focusResource(step.resource, step.resource);
 }
 
 function focusResource(resource, panelName = "materials") {
@@ -148,7 +155,9 @@ function focusResource(resource, panelName = "materials") {
   setDefaultPayload(resource);
   loadList();
   setActiveNav(panelName);
-  document.getElementById("formsPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+  setView("resource");
+  el.formsTitle.textContent = `Cadastro - ${resource}`;
+  el.formsPanel.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 function renderSetupStatus(status) {
@@ -233,6 +242,7 @@ async function loadResources() {
   renderMetrics(state.resources);
   el.listHint.textContent = state.currentResource;
   el.resourceSelect.value = state.currentResource;
+  el.formsTitle.textContent = `Cadastro - ${state.currentResource}`;
   await loadList();
 }
 
@@ -349,6 +359,7 @@ function bindNav() {
     button.addEventListener("click", () => {
       if (button.dataset.panel === "dashboard") {
         setActiveNav("dashboard");
+        setView("dashboard");
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else if (button.dataset.panel === "materials") {
         focusResource("materials", "materials");
@@ -367,6 +378,7 @@ function bindActions() {
   el.resourceSelect.addEventListener("change", () => {
     state.currentResource = el.resourceSelect.value;
     setDefaultPayload(state.currentResource);
+    el.formsTitle.textContent = `Cadastro - ${state.currentResource}`;
     loadList();
   });
 
@@ -382,6 +394,8 @@ function bindActions() {
 
   el.setupActionBtn.addEventListener("click", async () => {
     if (state.setupStatus?.ready) {
+      setView("dashboard");
+      setActiveNav("dashboard");
       document.getElementById("simulatorPanel").scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
@@ -439,10 +453,8 @@ function bindActions() {
     const button = event.target.closest("[data-resource]");
     if (!button) return;
     const resource = button.dataset.resource;
-    el.resourceSelect.value = resource;
-    state.currentResource = resource;
-    setDefaultPayload(resource);
-    loadList();
+    setActiveNav(resource === "materials" ? "materials" : resource === "printers" ? "printers" : resource === "print_jobs" ? "jobs" : resource === "orders" ? "orders" : "dashboard");
+    focusResource(resource, resource === "print_jobs" ? "jobs" : resource);
   });
 }
 
@@ -454,6 +466,7 @@ async function main() {
   await loadResources();
   await loadSimulatorLookups();
   setDefaultPayload(el.resourceSelect.value);
+  setView("dashboard");
 }
 
 main().catch((error) => {
