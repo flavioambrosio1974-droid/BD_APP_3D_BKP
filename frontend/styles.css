@@ -288,6 +288,12 @@ textarea {
   letter-spacing: 0.14em;
 }
 
+.panel-note {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 .big-number {
   font-size: clamp(3rem, 7vw, 5.2rem);
   font-weight: 800;
@@ -318,6 +324,30 @@ textarea {
   color: var(--muted);
   display: grid;
   gap: 10px;
+}
+
+.resource-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.resource-tab {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: 180ms ease;
+}
+
+.resource-tab:hover,
+.resource-tab.active {
+  border-color: rgba(255, 122, 24, 0.4);
+  background: rgba(255, 122, 24, 0.14);
+  transform: translateY(-1px);
 }
 
 .setup-grid {
@@ -359,6 +389,46 @@ textarea {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+}
+
+.resource-form {
+  align-items: start;
+}
+
+.resource-bar {
+  grid-column: 1 / -1;
+}
+
+.resource-fields {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.toggle-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(7, 10, 15, 0.9);
+}
+
+.toggle-field input {
+  width: auto;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px dashed var(--line);
+  color: var(--muted);
 }
 
 label {
@@ -455,7 +525,8 @@ button.secondary {
   .panel-grid,
   .form-grid,
   .estimate-grid,
-  .setup-grid {
+  .setup-grid,
+  .resource-fields {
     grid-template-columns: 1fr;
   }
 }
