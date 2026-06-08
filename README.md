@@ -19,6 +19,13 @@ Infraestrutura e scripts para a base do servidor do projeto de custos da impress
   - extrai um backup base tar.gz para um diretório de validação
   - serve para checar se o backup é restaurável antes de mexer no banco real
 
+- `database/schema.sql`
+  - esquema inicial do banco do app
+  - cobre usuários, impressoras, materiais, lotes, pedidos, custos e views de resumo
+
+- `docs/data-model.md`
+  - leitura humana do modelo de dados e da lógica de custo
+
 ## Como a estratégia de backup funciona
 
 - `WAL` arquivado em `/opt/backups/postgres/wal`
@@ -47,3 +54,4 @@ Infraestrutura e scripts para a base do servidor do projeto de custos da impress
 3. documentar o restore point-in-time
 4. automatizar cópia dos backups para outro destino
 5. validar restore base em rotina agendada ou manual
+6. criar o backend CRUD em cima do schema
