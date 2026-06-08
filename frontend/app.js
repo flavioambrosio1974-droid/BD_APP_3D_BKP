@@ -5,6 +5,7 @@ const state = {
   materials: [],
   materialLots: [],
   lastEstimate: null,
+  setupStatus: null,
 };
 
 const el = {
@@ -13,6 +14,14 @@ const el = {
   summaryCount: document.getElementById("summaryCount"),
   heroMetrics: document.getElementById("heroMetrics"),
   resourceChips: document.getElementById("resourceChips"),
+  setupProgressLabel: document.getElementById("setupProgressLabel"),
+  setupSummary: document.getElementById("setupSummary"),
+  setupProgressBar: document.getElementById("setupProgressBar"),
+  setupChecklist: document.getElementById("setupChecklist"),
+  setupNextLabel: document.getElementById("setupNextLabel"),
+  setupNextDetail: document.getElementById("setupNextDetail"),
+  setupActionBtn: document.getElementById("setupActionBtn"),
+  setupBootstrapBtn: document.getElementById("setupBootstrapBtn"),
   resourceSelect: document.getElementById("resourceSelect"),
   householdId: document.getElementById("householdId"),
   payloadInput: document.getElementById("payloadInput"),
@@ -92,6 +101,66 @@ function renderMetrics(resources) {
   el.summaryCount.textContent = resources.length;
 }
 
+function setupStepDetail(resource) {
+  const details = {
+    bootstrap: "Cria a casa/equipe e a configuração de custo base.",
+    cost_settings: "Define hora de trabalho, margem padrão e subsídio de frete.",
+    printers: "Registra a impressora que vai produzir as peças.",
+    materials: "Registra o tipo de filamento usado.",
+    material_lots: "Registra o lote físico comprado e o custo por peso.",
+    energy_rates: "Registra a tarifa de energia usada no cálculo.",
+    products: "Registra o item que vocês vão vender.",
+    print_jobs: "Registra uma produção real com custo e resultado.",
+  };
+  return details[resource] || "Abra o cadastro correspondente.";
+}
+
+function openSetupResource(step) {
+  if (!step) return;
+  if (step.resource === "bootstrap") {
+    el.setupBootstrapBtn.click();
+    return;
+  }
+  if (step.resource === "print_jobs") {
+    el.resourceSelect.value = "print_jobs";
+    state.currentResource = "print_jobs";
+    setDefaultPayload("print_jobs");
+    loadList();
+    document.getElementById("formsPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  el.resourceSelect.value = step.resource;
+  state.currentResource = step.resource;
+  setDefaultPayload(step.resource);
+  loadList();
+  document.getElementById("formsPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function renderSetupStatus(status) {
+  state.setupStatus = status;
+  if (!status) return;
+
+  const progress = Number(status.progress || 0);
+  el.setupProgressLabel.textContent = `${progress}%`;
+  el.setupSummary.textContent = status.ready
+    ? "Tudo pronto para simular custo e começar a registrar produção."
+    : `Faltam ${status.steps.filter((step) => !step.done).length} passos para liberar o fluxo completo.`;
+  el.setupProgressBar.style.width = `${progress}%`;
+  el.setupChecklist.innerHTML = status.steps
+    .map(
+      (step) => `
+        <li>
+          <strong>${step.label}</strong>
+          <span>${step.done ? "feito" : "pendente"}</span>
+        </li>
+      `,
+    )
+    .join("");
+  el.setupNextLabel.textContent = status.next_step?.label || "-";
+  el.setupNextDetail.textContent = setupStepDetail(status.next_step?.resource);
+  el.setupActionBtn.textContent = status.ready ? "Ir para o simulador" : "Abrir próximo cadastro";
+}
+
 function renderSimulatorOptions() {
   const materialById = new Map(state.materials.map((material) => [material.id, material]));
 
@@ -150,6 +219,12 @@ async function loadResources() {
   el.listHint.textContent = state.currentResource;
   el.resourceSelect.value = state.currentResource;
   await loadList();
+}
+
+async function loadSetupStatus() {
+  const householdId = Number(el.householdId.value || 1);
+  const status = await api(`/api/setup-status?household_id=${householdId}`);
+  renderSetupStatus(status);
 }
 
 async function loadSimulatorLookups() {
@@ -292,10 +367,29 @@ function bindActions() {
   el.bootstrapBtn.addEventListener("click", async () => {
     const result = await api("/api/bootstrap");
     el.healthDetail.textContent = `Household: ${result.name} (#${result.id})`;
+    await loadSetupStatus();
+    await loadSimulatorLookups();
     await loadList();
   });
 
   el.refreshBtn.addEventListener("click", loadList);
+
+  el.setupActionBtn.addEventListener("click", async () => {
+    if (state.setupStatus?.ready) {
+      document.getElementById("simulatorPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    if (state.setupStatus?.next_step) {
+      openSetupResource(state.setupStatus.next_step);
+    }
+  });
+
+  el.setupBootstrapBtn.addEventListener("click", async () => {
+    await api("/api/bootstrap");
+    await loadSetupStatus();
+    await loadSimulatorLookups();
+    await loadResources();
+  });
 
   el.simRefreshBtn.addEventListener("click", loadSimulatorLookups);
 
@@ -330,6 +424,8 @@ function bindActions() {
       method: "POST",
       body: JSON.stringify(payload),
     });
+    await loadSetupStatus();
+    await loadSimulatorLookups();
     await loadList();
   });
 
@@ -348,6 +444,7 @@ async function main() {
   bindNav();
   bindActions();
   await loadHealth();
+  await loadSetupStatus();
   await loadResources();
   await loadSimulatorLookups();
   setDefaultPayload(el.resourceSelect.value);

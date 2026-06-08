@@ -31,6 +31,83 @@ def bootstrap_household():
     return created
 
 
+def get_setup_status(household_id: int = 1):
+    household = fetch_one("select id, name from households where id = %s", (household_id,))
+
+    counts = {
+        "printers": fetch_one("select count(*)::int as count from printers where household_id = %s", (household_id,))["count"],
+        "materials": fetch_one("select count(*)::int as count from materials where household_id = %s", (household_id,))["count"],
+        "material_lots": fetch_one("select count(*)::int as count from material_lots where household_id = %s", (household_id,))["count"],
+        "energy_rates": fetch_one("select count(*)::int as count from energy_rates where household_id = %s", (household_id,))["count"],
+        "cost_settings": fetch_one("select count(*)::int as count from cost_settings where household_id = %s", (household_id,))["count"],
+        "products": fetch_one("select count(*)::int as count from products where household_id = %s", (household_id,))["count"],
+    }
+
+    steps = [
+        {
+            "key": "household",
+            "label": "Criar a casa/equipe",
+            "resource": "bootstrap",
+            "done": household is not None,
+            "recommended": household is None,
+        },
+        {
+            "key": "cost_settings",
+            "label": "Configurar custo base",
+            "resource": "cost_settings",
+            "done": counts["cost_settings"] > 0,
+            "recommended": household is not None and counts["cost_settings"] == 0,
+        },
+        {
+            "key": "printers",
+            "label": "Cadastrar impressora",
+            "resource": "printers",
+            "done": counts["printers"] > 0,
+            "recommended": household is not None and counts["printers"] == 0,
+        },
+        {
+            "key": "materials",
+            "label": "Cadastrar material",
+            "resource": "materials",
+            "done": counts["materials"] > 0,
+            "recommended": household is not None and counts["materials"] == 0,
+        },
+        {
+            "key": "material_lots",
+            "label": "Cadastrar lote",
+            "resource": "material_lots",
+            "done": counts["material_lots"] > 0,
+            "recommended": household is not None and counts["material_lots"] == 0 and counts["materials"] > 0,
+        },
+        {
+            "key": "energy_rates",
+            "label": "Cadastrar tarifa de energia",
+            "resource": "energy_rates",
+            "done": counts["energy_rates"] > 0,
+            "recommended": household is not None and counts["energy_rates"] == 0,
+        },
+        {
+            "key": "products",
+            "label": "Cadastrar um produto",
+            "resource": "products",
+            "done": counts["products"] > 0,
+            "recommended": household is not None and counts["products"] == 0 and counts["printers"] > 0,
+        },
+    ]
+
+    next_step = next((step for step in steps if not step["done"]), {"key": "ready", "label": "Tudo pronto", "resource": "print_jobs", "done": True, "recommended": False})
+    ready = all(step["done"] for step in steps)
+    progress = round((sum(1 for step in steps if step["done"]) / len(steps)) * 100) if steps else 100
+    return {
+        "household": household,
+        "counts": counts,
+        "steps": steps,
+        "next_step": next_step,
+        "ready": ready,
+        "progress": progress,
+    }
+
+
 def _require_resource(resource: str):
     config = RESOURCE_CONFIG.get(resource)
     if not config:

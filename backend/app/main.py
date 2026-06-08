@@ -10,6 +10,7 @@ from .crud import (
     delete_record,
     get_record,
     healthcheck,
+    get_setup_status,
     list_records,
     list_resources,
     update_record,
@@ -68,6 +69,11 @@ def resources():
 @api.get("/bootstrap")
 def bootstrap():
     return bootstrap_household()
+
+
+@api.get("/setup-status")
+def setup_status(household_id: int = 1):
+    return get_setup_status(household_id)
 
 
 @api.post("/estimate-print-job")

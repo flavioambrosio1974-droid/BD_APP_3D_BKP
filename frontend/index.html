@@ -69,17 +69,29 @@
             <div class="chip-row" id="resourceChips"></div>
           </article>
 
-          <article class="panel wide">
+          <article class="panel wide" id="setupPanel">
             <div class="panel-title">
-              <h3>Primeiro fluxo</h3>
-              <span>bootstrap</span>
+              <h3>Primeiro uso</h3>
+              <span id="setupProgressLabel">setup</span>
             </div>
-            <ol class="steps">
-              <li>Crie a casa/equipe com o bootstrap.</li>
-              <li>Cadastre impressoras, materiais e custo de energia.</li>
-              <li>Registre jobs, pedidos e despesas.</li>
-              <li>Veja o custo real antes de vender.</li>
-            </ol>
+            <p class="muted" id="setupSummary">Carregando o estado inicial.</p>
+            <div class="progress-track" aria-hidden="true">
+              <div class="progress-fill" id="setupProgressBar"></div>
+            </div>
+            <div class="setup-grid">
+              <ol class="steps" id="setupChecklist"></ol>
+              <div class="setup-next">
+                <div class="panel-title compact">
+                  <h4>Próxima ação</h4>
+                  <span id="setupNextLabel">-</span>
+                </div>
+                <p id="setupNextDetail" class="muted">-</p>
+                <div class="actions">
+                  <button type="button" id="setupActionBtn">Abrir próximo cadastro</button>
+                  <button type="button" class="secondary" id="setupBootstrapBtn">Criar casa/equipe</button>
+                </div>
+              </div>
+            </div>
           </article>
         </section>
 
